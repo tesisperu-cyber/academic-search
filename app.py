@@ -1036,7 +1036,7 @@ def pantalla_principal():
         """, unsafe_allow_html=True)
 
         st.markdown("---")
-        st.markdown("### 📊 Mapa de Investigación (Consensus)", unsafe_allow_html=False)
+        st.markdown("### 📊 Mapa de Investigación" unsafe_allow_html=False)
         fig, df_grafica = generar_grafica_consensus(df_res, tema_act, año_inicio, año_fin)
 
         fig_json  = fig.to_json()
