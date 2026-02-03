@@ -8,7 +8,6 @@ from deep_translator import GoogleTranslator
 from datetime import datetime
 from urllib.parse import quote_plus
 from openpyxl.styles import Alignment, PatternFill, Font, Border, Side
-from bs4 import BeautifulSoup
 
 # ════════════════════════════════════════════════════════════════════════════
 # 🔐 CONFIGURACIÓN DE CONTRASEÑAS — Modifica aquí
@@ -22,60 +21,141 @@ USUARIOS = {
 # ════════════════════════════════════════════════════════════════════════════
 CSS = """
 <style>
+    /* Fondo oscuro global */
     .stApp { background-color: #0f1923; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; }
+    
+    /* Sidebar oscuro */
     .css-1d391d5 { background-color: #0a1118 !important; }
     section[data-testid="stSidebar"] { background-color: #0a1118 !important; }
     section[data-testid="stSidebar"] .stMarkdown { color: #cbd5e1; }
+
+    /* Título principal */
     h1 { color: #38bdf8 !important; text-align: center; font-size: 2rem !important; margin-bottom: 4px !important; }
     h2 { color: #7dd3fc !important; margin-top: 18px !important; }
     h3 { color: #bae6fd !important; }
-    .stTextInput > div > div > input, .stTextarea > div > div > textarea {
-        background-color: #162231 !important; color: #f1f5f9 !important;
-        border: 1px solid #2d4a6f !important; border-radius: 8px !important;
+
+    /* Inputs */
+    .stTextInput > div > div > input,
+    .stTextarea > div > div > textarea {
+        background-color: #162231 !important;
+        color: #f1f5f9 !important;
+        border: 1px solid #2d4a6f !important;
+        border-radius: 8px !important;
     }
-    .stTextInput > div > div > input:focus, .stTextarea > div > div > textarea:focus {
-        border-color: #38bdf8 !important; box-shadow: 0 0 0 2px rgba(56,189,248,0.3) !important;
+    .stTextInput > div > div > input:focus,
+    .stTextarea > div > div > textarea:focus {
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 2px rgba(56,189,248,0.3) !important;
     }
     .stTextInput label, .stTextarea label { color: #7dd3fc !important; font-weight: 600; }
+
+    /* Selectbox / Multiselect */
     .stSelectbox > div > div, .stMultiselect > div > div {
-        background-color: #162231 !important; color: #f1f5f9 !important;
-        border: 1px solid #2d4a6f !important; border-radius: 8px !important;
+        background-color: #162231 !important;
+        color: #f1f5f9 !important;
+        border: 1px solid #2d4a6f !important;
+        border-radius: 8px !important;
     }
     .stSelectbox label, .stMultiselect label { color: #7dd3fc !important; font-weight: 600; }
+
+    /* Botones */
     .stButton > button {
         background: linear-gradient(135deg, #1e6fa0, #38bdf8) !important;
-        color: #fff !important; border: none !important; border-radius: 10px !important;
-        padding: 12px 28px !important; font-size: 1.05rem !important; font-weight: 700 !important;
-        cursor: pointer; transition: all 0.25s ease; width: 100%;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 12px 28px !important;
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        width: 100%;
     }
     .stButton > button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56,189,248,0.35) !important; }
-    .card { background: #162231; border: 1px solid #2d4a6f; border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+
+    /* Cards / containers */
+    .card {
+        background: #162231;
+        border: 1px solid #2d4a6f;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 16px;
+    }
+
+    /* Login box */
     .login-box {
-        background: linear-gradient(145deg, #0f1e2e, #162231); border: 1px solid #2d4a6f;
-        border-radius: 18px; padding: 44px 36px; max-width: 420px; margin: 60px auto;
+        background: linear-gradient(145deg, #0f1e2e, #162231);
+        border: 1px solid #2d4a6f;
+        border-radius: 18px;
+        padding: 44px 36px;
+        max-width: 420px;
+        margin: 60px auto;
         box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
     .login-box h2 { text-align: center; color: #38bdf8; margin-bottom: 8px; }
     .login-box p  { text-align: center; color: #64748b; margin-bottom: 24px; }
-    .badge-ambas { background: linear-gradient(135deg, #166534, #22c55e); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
-    .badge-una { background: linear-gradient(135deg, #b45309, #f59e0b); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
-    .badge-tesis { background: linear-gradient(135deg, #6d28d9, #8b5cf6); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
-    .badge-articulo { background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
-    .result-card { background: #1a2d3d; border: 1px solid #2d4a6f; border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; transition: border-color 0.2s; }
+
+    /* Badges */
+    .badge-ambas {
+        background: linear-gradient(135deg, #166534, #22c55e);
+        color: #fff; padding: 3px 10px; border-radius: 12px;
+        font-size: 0.75rem; font-weight: 700; display: inline-block;
+    }
+    .badge-una {
+        background: linear-gradient(135deg, #b45309, #f59e0b);
+        color: #fff; padding: 3px 10px; border-radius: 12px;
+        font-size: 0.75rem; font-weight: 700; display: inline-block;
+    }
+    .badge-tesis {
+        background: linear-gradient(135deg, #6d28d9, #8b5cf6);
+        color: #fff; padding: 3px 10px; border-radius: 12px;
+        font-size: 0.72rem; font-weight: 700; display: inline-block;
+    }
+    .badge-articulo {
+        background: linear-gradient(135deg, #0c4a6e, #0ea5e9);
+        color: #fff; padding: 3px 10px; border-radius: 12px;
+        font-size: 0.72rem; font-weight: 700; display: inline-block;
+    }
+
+    /* Result card */
+    .result-card {
+        background: #1a2d3d;
+        border: 1px solid #2d4a6f;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 10px;
+        transition: border-color 0.2s;
+    }
     .result-card:hover { border-color: #38bdf8; }
+
+    /* Stats row */
     .stats-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
-    .stat-box { background: #162231; border: 1px solid #2d4a6f; border-radius: 12px; padding: 12px 20px; text-align: center; flex: 1; min-width: 110px; }
+    .stat-box {
+        background: #162231; border: 1px solid #2d4a6f; border-radius: 12px;
+        padding: 12px 20px; text-align: center; flex: 1; min-width: 110px;
+    }
     .stat-box .num { font-size: 1.7rem; font-weight: 800; color: #38bdf8; }
     .stat-box .lbl { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+
+    /* Divider */
     hr { border-color: #2d4a6f !important; }
+
+    /* Checkbox */
     .stCheckbox label { color: #cbd5e1 !important; }
+
+    /* Expander */
     .streamlit-expander { border-color: #2d4a6f !important; background: #162231 !important; }
     .streamlit-expander p { color: #cbd5e1; }
+
+    /* scrollbar */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0f1923; }
     ::-webkit-scrollbar-thumb { background: #2d4a6f; border-radius: 3px; }
+
     .centered { text-align: center; }
     .subtle { color: #64748b; font-size: 0.85rem; }
+
+    /* Tags multiselect pills */
     .stMultiselect span.css-1n7v3ny-multiwordOption { background-color: #1e3a5f !important; color: #7dd3fc !important; }
 </style>
 """
@@ -84,9 +164,8 @@ CSS = """
 # ⚙️ CONSTANTES Y HELPERS
 # ════════════════════════════════════════════════════════════════════════════
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'application/xml, application/json, text/html, */*',
-    'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
+    'User-Agent': 'AcademicSearchBot/2.0 (Research; mailto:investigador@universidad.edu)',
+    'Accept': 'application/xml, application/json, text/html'
 }
 IDIOMAS_LABEL = {'en': '🇬🇧 Inglés', 'es': '🇪🇸 Español', 'pt': '🇧🇷 Portugués'}
 
@@ -113,9 +192,9 @@ REPOSITORIOS_OAIPMH = {
     "🇨🇷 UCR":                   "https://www.kerwa.ucr.ac.cr/oai/request",
 }
 
-# Lista de fuentes actualizada con nuevas fuentes
-FUENTES_LISTA = ["OpenAlex", "CrossRef", "PubMed", "Semantic Scholar", "Europe PMC", "DOAJ", "arXiv", "SciELO", "Redalyc", "OATD"]
+FUENTES_LISTA = ["OpenAlex","CrossRef","PubMed","Semantic Scholar","Europe PMC","DOAJ","arXiv","SciELO"]
 
+# Timeouts más largos para la nube
 TIMEOUT_API = 45
 TIMEOUT_OAI = 25
 
@@ -129,11 +208,10 @@ def normalizar(texto):
 
 _cache_trad = {}
 def traducir(texto, destino):
-    if not texto: return texto
     key = f"{texto}_{destino}"
     if key in _cache_trad: return _cache_trad[key]
     try:
-        res = GoogleTranslator(source='auto', target=destino).translate(texto)
+        res = GoogleTranslator(source='es', target=destino).translate(texto)
         _cache_trad[key] = res
         return res
     except:
@@ -151,10 +229,8 @@ def clasificar_relevancia(texto, var1, var2):
         return 'ambas' if variable_en_texto(texto, var1) else 'ninguna'
     var1_en = traducir(var1, 'en').lower() if var1 else ''
     var2_en = traducir(var2, 'en').lower() if var2 else ''
-    var1_pt = traducir(var1, 'pt').lower() if var1 else ''
-    var2_pt = traducir(var2, 'pt').lower() if var2 else ''
-    tiene_v1 = variable_en_texto(texto, var1) or variable_en_texto(texto, var1_en) or variable_en_texto(texto, var1_pt)
-    tiene_v2 = variable_en_texto(texto, var2) or variable_en_texto(texto, var2_en) or variable_en_texto(texto, var2_pt)
+    tiene_v1 = variable_en_texto(texto, var1) or (var1_en and variable_en_texto(texto, var1_en))
+    tiene_v2 = variable_en_texto(texto, var2) or (var2_en and variable_en_texto(texto, var2_en))
     if tiene_v1 and tiene_v2: return 'ambas'
     if tiene_v1 or tiene_v2:  return 'una'
     return 'ninguna'
@@ -213,162 +289,6 @@ def get_abstract_openalex(work):
             return ' '.join([palabras[i] for i in sorted(palabras.keys())])
     except: pass
     return ""
-
-# ════════════════════════════════════════════════════════════════════════════
-# 🇵🇪 ALICIA CONCYTEC (TESIS Y ARTÍCULOS PERÚ)
-# ════════════════════════════════════════════════════════════════════════════
-def buscar_alicia_concytec(var1, var2, año_inicio, año_fin, max_results=30):
-    resultados = []
-    años_busqueda = list(range(año_inicio, año_fin+1))
-    query = f"{var1} {var2}" if var2 else var1
-    try:
-        r = requests.get("https://alicia.concytec.gob.pe/vufind/Search/Results",
-                        params={'lookfor': query, 'type': 'AllFields', 'limit': max_results},
-                        headers=HEADERS, timeout=30)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'lxml')
-            items = soup.select('div.result, li.result')
-            for item in items[:max_results]:
-                try:
-                    titulo_elem = item.select_one('a.title, div.result-title a')
-                    if not titulo_elem: continue
-                    titulo = titulo_elem.get_text(strip=True)
-                    link = titulo_elem.get('href', '')
-                    if link and not link.startswith('http'): 
-                        link = f"https://alicia.concytec.gob.pe{link}"
-                    
-                    desc_elem = item.select_one('div.result-summary, div.description')
-                    resumen = desc_elem.get_text(strip=True)[:500] if desc_elem else ""
-                    
-                    año = 2023
-                    fecha_elem = item.select_one('div.result-date, span.date')
-                    if fecha_elem:
-                        año_match = re.search(r'(20\d{2})', fecha_elem.get_text())
-                        if año_match: año = int(año_match.group(1))
-                    
-                    if año not in años_busqueda: continue
-                    
-                    texto_full = f"{titulo} {resumen}"
-                    relevancia = clasificar_relevancia(texto_full, var1, var2)
-                    if relevancia == 'ninguna': continue
-                    
-                    tipo_elem = item.select_one('div.result-formats span, span.format')
-                    tipo_doc = tipo_elem.get_text(strip=True).lower() if tipo_elem else "documento"
-                    es_tesis = any(t in tipo_doc for t in ['tesis', 'thesis', 'grado', 'maestr', 'doctor'])
-                    
-                    autor_elem = item.select_one('div.result-author a, span.author')
-                    autor_nombre = autor_elem.get_text(strip=True) if autor_elem else ""
-                    autores_lista = [autor_nombre] if autor_nombre else []
-                    
-                    resultados.append({
-                        "titulo": titulo, "autor": autor_nombre, "autores_lista": autores_lista,
-                        "cita_apa": formatear_cita_apa(autores_lista, año),
-                        "resumen": resumen, "año": año, "url": link, "citas": 0,
-                        "tipo": "📘 Tesis" if es_tesis else "📄 Artículo",
-                        "fuente": "ALICIA CONCYTEC", "idioma": "🇵🇪 Perú",
-                        "relevancia": relevancia
-                    })
-                except: continue
-    except: pass
-    return resultados
-
-# ════════════════════════════════════════════════════════════════════════════
-# 🌎 OATD - Open Access Theses and Dissertations
-# ════════════════════════════════════════════════════════════════════════════
-def buscar_oatd(var1, var2, año_inicio, año_fin, max_results=30):
-    resultados = []
-    años_busqueda = list(range(año_inicio, año_fin+1))
-    
-    # Buscar en español, inglés y portugués
-    queries = [f"{var1} {var2}" if var2 else var1]
-    queries.append(traducir(queries[0], 'en'))
-    queries.append(traducir(queries[0], 'pt'))
-    
-    for query in queries:
-        try:
-            r = requests.get("https://oatd.org/oatd/search",
-                           params={'q': query, 'format': 'html'},
-                           headers=HEADERS, timeout=30)
-            if r.status_code == 200:
-                soup = BeautifulSoup(r.text, 'lxml')
-                items = soup.select('div.result, tr.result')
-                for item in items[:max_results//3]:
-                    try:
-                        titulo_elem = item.select_one('a.title, td.title a, a')
-                        if not titulo_elem: continue
-                        titulo = titulo_elem.get_text(strip=True)
-                        if not titulo: continue
-                        
-                        link = titulo_elem.get('href', '')
-                        if link and not link.startswith('http'):
-                            link = f"https://oatd.org{link}"
-                        
-                        año = 2023
-                        año_match = re.search(r'(20\d{2})', item.get_text())
-                        if año_match: año = int(año_match.group(1))
-                        
-                        if año not in años_busqueda: continue
-                        
-                        texto_full = f"{titulo}"
-                        relevancia = clasificar_relevancia(texto_full, var1, var2)
-                        if relevancia == 'ninguna': continue
-                        
-                        autor_elem = item.select_one('span.author, td.author')
-                        autor_nombre = autor_elem.get_text(strip=True) if autor_elem else ""
-                        autores_lista = [autor_nombre] if autor_nombre else []
-                        
-                        resultados.append({
-                            "titulo": titulo, "autor": autor_nombre, "autores_lista": autores_lista,
-                            "cita_apa": formatear_cita_apa(autores_lista, año),
-                            "resumen": "", "año": año, "url": link, "citas": 0,
-                            "tipo": "📘 Tesis",
-                            "fuente": "OATD", "idioma": "🌍 OATD",
-                            "relevancia": relevancia
-                        })
-                    except: continue
-            time.sleep(0.5)
-        except: pass
-    return resultados
-
-# ════════════════════════════════════════════════════════════════════════════
-# 📚 REDALYC (vía OpenAlex)
-# ════════════════════════════════════════════════════════════════════════════
-def buscar_redalyc(var1, var2, año_inicio, año_fin, max_results=30):
-    resultados, titulos_vistos = [], set()
-    años_busqueda = list(range(año_inicio, año_fin+1))
-    
-    # Buscar en español y portugués
-    tema_es = f"{var1} {var2}" if var2 else var1
-    tema_pt = traducir(tema_es, 'pt')
-    
-    for query in [tema_es, tema_pt]:
-        try:
-            r = requests.get("https://api.openalex.org/works", params={
-                "search": query, "per_page": max_results, "sort": "cited_by_count:desc",
-                "filter": f"primary_location.source.display_name.search:redalyc,publication_year:{año_inicio}-{año_fin}",
-                "mailto": "investigador@universidad.edu"}, timeout=TIMEOUT_API)
-            if r.status_code == 200:
-                for work in r.json().get("results", []):
-                    titulo = work.get("title", "") or ""
-                    if titulo in titulos_vistos: continue
-                    abstract = get_abstract_openalex(work)
-                    rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
-                    if rel == 'ninguna': continue
-                    fecha = work.get("publication_date", "")
-                    año = int(fecha[:4]) if fecha and len(fecha) >= 4 else 0
-                    if año not in años_busqueda: continue
-                    titulos_vistos.add(titulo)
-                    autores = [a.get("author", {}).get("display_name", "") for a in work.get("authorships", []) if a.get("author", {}).get("display_name")]
-                    resultados.append({
-                        "titulo": titulo, "autor": autores_display(autores), "autores_lista": autores,
-                        "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                        "url": work.get("doi") or work.get("id", ""), "citas": safe_int(work.get("cited_by_count")),
-                        "tipo": "📄 Artículo", "fuente": "Redalyc", "idioma": "🌎 Redalyc",
-                        "relevancia": rel
-                    })
-            time.sleep(0.3)
-        except: pass
-    return resultados
 
 # ════════════════════════════════════════════════════════════════════════════
 # 🏛️ OAI-PMH
@@ -443,22 +363,18 @@ def cosecha_oaipmh(base_url, nombre_repo, var1, var2, año_inicio, año_fin, max
     return resultados
 
 # ════════════════════════════════════════════════════════════════════════════
-# 🔬 APIs DE BÚSQUEDA PRINCIPALES
+# 🔬 APIs DE BÚSQUEDA
 # ════════════════════════════════════════════════════════════════════════════
 def buscar_openalex_articulos(var1, var2, año_inicio, año_fin, max_por_idioma=50):
     articulos, titulos_vistos = [], set()
-    v1_en = traducir(var1, 'en')
-    v2_en = traducir(var2, 'en') if var2 else ''
-    v1_pt = traducir(var1, 'pt')
-    v2_pt = traducir(var2, 'pt') if var2 else ''
+    v1_en, v2_en = traducir(var1,'en'), (traducir(var2,'en') if var2 else '')
+    v1_pt, v2_pt = traducir(var1,'pt'), (traducir(var2,'pt') if var2 else '')
     años_busqueda = list(range(año_inicio, año_fin+1))
-    
     busquedas = {
-        'es': [f"{var1} {var2}" if var2 else var1, var1] + ([var2] if var2 else []),
-        'en': [f"{v1_en} {v2_en}" if v2_en else v1_en, v1_en] + ([v2_en] if v2_en else []),
-        'pt': [f"{v1_pt} {v2_pt}" if v2_pt else v1_pt, v1_pt] + ([v2_pt] if v2_pt else []),
+        'es': [f"{var1} {var2}", var1] + ([var2] if var2 else []),
+        'en': [f"{v1_en} {v2_en}", v1_en] + ([v2_en] if v2_en else []),
+        'pt': [f"{v1_pt} {v2_pt}", v1_pt] + ([v2_pt] if v2_pt else []),
     }
-    
     for idioma, queries in busquedas.items():
         for tema in queries:
             try:
@@ -467,110 +383,98 @@ def buscar_openalex_articulos(var1, var2, año_inicio, año_fin, max_por_idioma=
                     "filter": f"type:article,language:{idioma},publication_year:{año_inicio}-{año_fin}",
                     "mailto": "investigador@universidad.edu"}, timeout=TIMEOUT_API)
                 if r.status_code == 200:
-                    for work in r.json().get("results", []):
-                        titulo = work.get("title", "") or ""
+                    for work in r.json().get("results",[]):
+                        titulo = work.get("title","") or ""
                         if titulo in titulos_vistos: continue
                         abstract = get_abstract_openalex(work)
                         rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
                         if rel == 'ninguna': continue
-                        fecha = work.get("publication_date", "")
-                        año = int(fecha[:4]) if fecha and len(fecha) >= 4 else 0
+                        fecha = work.get("publication_date","")
+                        año = int(fecha[:4]) if fecha and len(fecha)>=4 else 0
                         if año not in años_busqueda: continue
                         titulos_vistos.add(titulo)
-                        autores = [a.get("author", {}).get("display_name", "") for a in work.get("authorships", []) if a.get("author", {}).get("display_name")]
-                        articulos.append({
-                            "titulo": titulo, "autor": autores_display(autores), "autores_lista": autores,
-                            "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                            "url": work.get("doi") or work.get("id", ""), "citas": safe_int(work.get("cited_by_count")),
-                            "tipo": "📄 Artículo", "fuente": f"OpenAlex ({IDIOMAS_LABEL.get(idioma, '')})",
-                            "idioma": IDIOMAS_LABEL.get(idioma, ''), "relevancia": rel
-                        })
+                        autores = [a.get("author",{}).get("display_name","") for a in work.get("authorships",[]) if a.get("author",{}).get("display_name")]
+                        articulos.append({"titulo":titulo,"autor":autores_display(autores),"autores_lista":autores,
+                            "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                            "url":work.get("doi") or work.get("id",""),"citas":safe_int(work.get("cited_by_count")),
+                            "tipo":"📄 Artículo","fuente":f"OpenAlex ({IDIOMAS_LABEL.get(idioma,'')})","idioma":IDIOMAS_LABEL.get(idioma,''),
+                            "relevancia":rel})
                 time.sleep(0.2)
             except: pass
     return articulos
 
 def buscar_openalex_tesis_latam(var1, var2, año_inicio, año_fin, max_results=40):
     tesis, titulos_vistos = [], set()
-    tema_es = f"{var1} {var2}" if var2 else var1
-    tema_en = traducir(tema_es, 'en')
-    tema_pt = traducir(tema_es, 'pt')
+    tema = f"{var1} {var2}" if var2 else var1
     años_busqueda = list(range(año_inicio, año_fin+1))
     paises = ['PE','CO','MX','CL','EC','BR','AR','CR','BO','PY','UY','VE','PA','CU','DO','GT','HN','SV','NI']
-    
-    for tema in [tema_es, tema_en, tema_pt]:
-        for pais_code in paises:
-            try:
-                r = requests.get("https://api.openalex.org/works", params={
-                    "search": tema, "per_page": max_results, "sort": "cited_by_count:desc",
-                    "filter": f"type:dissertation,institutions.country_code:{pais_code},publication_year:{año_inicio}-{año_fin}",
-                    "mailto": "investigador@universidad.edu"}, timeout=TIMEOUT_API)
-                if r.status_code == 200:
-                    for work in r.json().get("results", []):
-                        titulo = work.get("title", "") or ""
-                        if titulo in titulos_vistos: continue
-                        abstract = get_abstract_openalex(work)
-                        rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
-                        if rel == 'ninguna': continue
-                        fecha = work.get("publication_date", "")
-                        año = int(fecha[:4]) if fecha and len(fecha) >= 4 else 0
-                        if año not in años_busqueda: continue
-                        titulos_vistos.add(titulo)
-                        autores = [a.get("author", {}).get("display_name", "") for a in work.get("authorships", []) if a.get("author", {}).get("display_name")]
-                        inst = ""
-                        try:
-                            auth = work.get("authorships", [])
-                            if auth and auth[0].get("institutions"):
-                                inst = auth[0]["institutions"][0].get("display_name", "")
-                        except: pass
-                        autor_d = (autores[0] if autores else "") + (f" ({inst})" if inst else "")
-                        tesis.append({
-                            "titulo": titulo, "autor": autor_d, "autores_lista": autores,
-                            "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                            "url": work.get("doi") or work.get("id", ""), "citas": safe_int(work.get("cited_by_count")),
-                            "tipo": "📘 Tesis", "fuente": f"OpenAlex (LATAM-{pais_code})", "idioma": "🌎 LATAM",
-                            "relevancia": rel
-                        })
-                time.sleep(0.15)
-            except: pass
+    for pais_code in paises:
+        try:
+            r = requests.get("https://api.openalex.org/works", params={
+                "search":tema,"per_page":max_results,"sort":"cited_by_count:desc",
+                "filter":f"type:dissertation,institutions.country_code:{pais_code},publication_year:{año_inicio}-{año_fin}",
+                "mailto":"investigador@universidad.edu"}, timeout=TIMEOUT_API)
+            if r.status_code == 200:
+                for work in r.json().get("results",[]):
+                    titulo = work.get("title","") or ""
+                    if titulo in titulos_vistos: continue
+                    abstract = get_abstract_openalex(work)
+                    rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
+                    if rel == 'ninguna': continue
+                    fecha = work.get("publication_date","")
+                    año = int(fecha[:4]) if fecha and len(fecha)>=4 else 0
+                    if año not in años_busqueda: continue
+                    titulos_vistos.add(titulo)
+                    autores = [a.get("author",{}).get("display_name","") for a in work.get("authorships",[]) if a.get("author",{}).get("display_name")]
+                    inst = ""
+                    try:
+                        auth = work.get("authorships",[])
+                        if auth and auth[0].get("institutions"):
+                            inst = auth[0]["institutions"][0].get("display_name","")
+                    except: pass
+                    autor_d = (autores[0] if autores else "") + (f" ({inst})" if inst else "")
+                    tesis.append({"titulo":titulo,"autor":autor_d,"autores_lista":autores,
+                        "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                        "url":work.get("doi") or work.get("id",""),"citas":safe_int(work.get("cited_by_count")),
+                        "tipo":"📘 Tesis","fuente":f"OpenAlex (LATAM-{pais_code})","idioma":"🌎 LATAM",
+                        "relevancia":rel})
+            time.sleep(0.15)
+        except: pass
     return tesis
 
 def buscar_crossref(var1, var2, año_inicio, año_fin, max_results=40):
     resultados, titulos_vistos = [], set()
     años_busqueda = list(range(año_inicio, año_fin+1))
-    tema_es = f"{var1} {var2}" if var2 else var1
-    tema_en = traducir(tema_es, 'en')
-    tema_pt = traducir(tema_es, 'pt')
-    
-    for query in [tema_en, tema_es, tema_pt]:
+    query_en = f"{traducir(var1,'en')} {traducir(var2,'en')}" if var2 else traducir(var1,'en')
+    queries = [query_en, traducir(var1,'en')] + ([traducir(var2,'en')] if var2 else [])
+    for query in queries:
         try:
             r = requests.get("https://api.crossref.org/works", params={
-                "query": query, "rows": max_results, "sort": "relevance",
-                "filter": f"from-pub-date:{año_inicio},until-pub-date:{año_fin}",
-                "select": "DOI,title,author,abstract,published-print,published-online,is-referenced-by-count,type"
-            }, timeout=TIMEOUT_API, headers={"User-Agent": "AcademicSearchBot/2.0 (mailto:investigador@universidad.edu)"})
+                "query":query,"rows":max_results,"sort":"relevance",
+                "filter":f"from-pub-date:{año_inicio},until-pub-date:{año_fin}",
+                "select":"DOI,title,author,abstract,published-print,published-online,is-referenced-by-count,type"
+            }, timeout=TIMEOUT_API, headers={"User-Agent":"AcademicSearchBot/2.0 (mailto:investigador@universidad.edu)"})
             if r.status_code == 200:
-                for item in r.json().get("message", {}).get("items", []):
-                    titulo = item.get("title", [""])[0] if item.get("title") else ""
+                for item in r.json().get("message",{}).get("items",[]):
+                    titulo = item.get("title",[""])[0] if item.get("title") else ""
                     if titulo in titulos_vistos: continue
                     abstract = ""
                     if item.get("abstract"):
-                        abstract = re.sub(r'<[^>]+>', '', item.get("abstract", ""))
+                        abstract = re.sub(r'<[^>]+>','', item.get("abstract",""))
                     rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
                     if rel == 'ninguna': continue
-                    autores_raw = item.get("author", [])
-                    autores = [f"{a.get('given', '')} {a.get('family', '')}".strip() for a in autores_raw]
+                    autores_raw = item.get("author",[])
+                    autores = [f"{a.get('given','')} {a.get('family','')}".strip() for a in autores_raw]
                     fecha = item.get("published-print") or item.get("published-online") or {}
-                    dp = fecha.get("date-parts", [[0]])[0]
+                    dp = fecha.get("date-parts",[[0]])[0]
                     año = dp[0] if dp else 0
                     if año not in años_busqueda: continue
                     titulos_vistos.add(titulo)
-                    doi = item.get("DOI", "")
-                    resultados.append({
-                        "titulo": titulo, "autor": autores_display(autores), "autores_lista": autores,
-                        "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                        "url": f"https://doi.org/{doi}" if doi else "", "citas": safe_int(item.get("is-referenced-by-count")),
-                        "tipo": "📄 Artículo", "fuente": "CrossRef", "idioma": "🔗 CrossRef", "relevancia": rel
-                    })
+                    doi = item.get("DOI","")
+                    resultados.append({"titulo":titulo,"autor":autores_display(autores),"autores_lista":autores,
+                        "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                        "url":f"https://doi.org/{doi}" if doi else "","citas":safe_int(item.get("is-referenced-by-count")),
+                        "tipo":"📄 Artículo","fuente":"CrossRef","idioma":"🔗 CrossRef","relevancia":rel})
             time.sleep(0.2)
         except: pass
     return resultados
@@ -578,17 +482,17 @@ def buscar_crossref(var1, var2, año_inicio, año_fin, max_results=40):
 def buscar_pubmed(var1, var2, año_inicio, año_fin, max_results=40):
     resultados = []
     años_busqueda = list(range(año_inicio, año_fin+1))
-    tema_en = traducir(f"{var1} {var2}" if var2 else var1, 'en')
+    query_en = f"{traducir(var1,'en')} {traducir(var2,'en')}" if var2 else traducir(var1,'en')
     try:
         r = requests.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi", params={
-            "db": "pubmed", "term": f"{tema_en} AND {año_inicio}:{año_fin}[dp]",
-            "retmax": max_results, "retmode": "json", "sort": "relevance"}, timeout=TIMEOUT_API)
+            "db":"pubmed","term":f"{query_en} AND {año_inicio}:{año_fin}[dp]",
+            "retmax":max_results,"retmode":"json","sort":"relevance"}, timeout=TIMEOUT_API)
         if r.status_code != 200: return resultados
-        ids = r.json().get("esearchresult", {}).get("idlist", [])
+        ids = r.json().get("esearchresult",{}).get("idlist",[])
         if not ids: return resultados
         time.sleep(0.5)
         r = requests.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi", params={
-            "db": "pubmed", "id": ",".join(ids), "retmode": "xml"}, timeout=TIMEOUT_API)
+            "db":"pubmed","id":",".join(ids),"retmode":"xml"}, timeout=TIMEOUT_API)
         if r.status_code == 200:
             root = ET.fromstring(r.content)
             for article in root.findall('.//PubmedArticle'):
@@ -606,41 +510,37 @@ def buscar_pubmed(var1, var2, año_inicio, año_fin, max_results=40):
                 año = int(m.group(1)) if m else 0
                 if año not in años_busqueda: continue
                 pmid = article.findtext('.//PMID') or ""
-                resultados.append({
-                    "titulo": titulo, "autor": autores_display(autores), "autores_lista": autores,
-                    "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                    "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else "", "citas": 0,
-                    "tipo": "📄 Artículo", "fuente": "PubMed", "idioma": "🏥 PubMed", "relevancia": rel
-                })
+                resultados.append({"titulo":titulo,"autor":autores_display(autores),"autores_lista":autores,
+                    "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                    "url":f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else "","citas":0,
+                    "tipo":"📄 Artículo","fuente":"PubMed","idioma":"🏥 PubMed","relevancia":rel})
     except: pass
     return resultados
 
 def buscar_semantic_scholar(var1, var2, año_inicio, año_fin, max_results=40):
     resultados = []
     años_busqueda = list(range(año_inicio, año_fin+1))
-    tema_en = traducir(f"{var1} {var2}" if var2 else var1, 'en')
+    query_en = f"{traducir(var1,'en')} {traducir(var2,'en')}" if var2 else traducir(var1,'en')
     try:
         r = requests.get("https://api.semanticscholar.org/graph/v1/paper/search", params={
-            "query": tema_en, "limit": min(max_results, 100), "year": f"{año_inicio}-{año_fin}",
-            "fields": "title,authors,abstract,year,citationCount,externalIds,url"}, timeout=TIMEOUT_API)
+            "query":query_en,"limit":min(max_results,100),"year":f"{año_inicio}-{año_fin}",
+            "fields":"title,authors,abstract,year,citationCount,externalIds,url"}, timeout=TIMEOUT_API)
         if r.status_code == 200:
-            for paper in r.json().get("data", []):
-                titulo = paper.get("title", "")
-                abstract = paper.get("abstract", "") or ""
+            for paper in r.json().get("data",[]):
+                titulo = paper.get("title","")
+                abstract = paper.get("abstract","") or ""
                 rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
                 if rel == 'ninguna': continue
                 año = safe_int(paper.get("year"))
                 if año not in años_busqueda: continue
-                autores = [a.get("name", "") for a in paper.get("authors", []) if a.get("name")]
-                ext = paper.get("externalIds", {}) or {}
-                doi = ext.get("DOI", "")
-                url = f"https://doi.org/{doi}" if doi else paper.get("url", "") or ""
-                resultados.append({
-                    "titulo": titulo, "autor": autores_display(autores), "autores_lista": autores,
-                    "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                    "url": url, "citas": safe_int(paper.get("citationCount")),
-                    "tipo": "📄 Artículo", "fuente": "Semantic Scholar", "idioma": "🤖 S.Scholar", "relevancia": rel
-                })
+                autores = [a.get("name","") for a in paper.get("authors",[]) if a.get("name")]
+                ext = paper.get("externalIds",{}) or {}
+                doi = ext.get("DOI","")
+                url = f"https://doi.org/{doi}" if doi else paper.get("url","") or ""
+                resultados.append({"titulo":titulo,"autor":autores_display(autores),"autores_lista":autores,
+                    "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                    "url":url,"citas":safe_int(paper.get("citationCount")),
+                    "tipo":"📄 Artículo","fuente":"Semantic Scholar","idioma":"🤖 S.Scholar","relevancia":rel})
         elif r.status_code == 429: time.sleep(5)
     except: pass
     return resultados
@@ -648,97 +548,87 @@ def buscar_semantic_scholar(var1, var2, año_inicio, año_fin, max_results=40):
 def buscar_europe_pmc(var1, var2, año_inicio, año_fin, max_results=40):
     resultados = []
     años_busqueda = list(range(año_inicio, año_fin+1))
-    tema_en = traducir(f"{var1} {var2}" if var2 else var1, 'en')
+    query_en = f"{traducir(var1,'en')} {traducir(var2,'en')}" if var2 else traducir(var1,'en')
     try:
         r = requests.get("https://www.ebi.ac.uk/europepmc/webservices/rest/search", params={
-            "query": f"{tema_en} FIRST_PDATE:[{año_inicio} TO {año_fin}]",
-            "format": "json", "pageSize": max_results, "resultType": "core"}, timeout=TIMEOUT_API)
+            "query":f"{query_en} FIRST_PDATE:[{año_inicio} TO {año_fin}]",
+            "format":"json","pageSize":max_results,"resultType":"core"}, timeout=TIMEOUT_API)
         if r.status_code == 200:
-            for item in r.json().get("resultList", {}).get("result", []):
-                titulo = item.get("title", "")
-                abstract = item.get("abstractText", "") or ""
+            for item in r.json().get("resultList",{}).get("result",[]):
+                titulo = item.get("title","")
+                abstract = item.get("abstractText","") or ""
                 rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
                 if rel == 'ninguna': continue
                 año = safe_int(item.get("pubYear"))
                 if año not in años_busqueda: continue
-                autores_str = item.get("authorString", "")
+                autores_str = item.get("authorString","")
                 autores = [a.strip() for a in autores_str.split(",")[:10]] if autores_str else []
-                doi = item.get("doi", "")
-                pmid = item.get("pmid", "")
-                url = f"https://doi.org/{doi}" if doi else (f"https://europepmc.org/article/MED/{pmid}" if pmid else "")
-                resultados.append({
-                    "titulo": titulo, "autor": autores_str[:100], "autores_lista": autores,
-                    "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                    "url": url, "citas": safe_int(item.get("citedByCount")),
-                    "tipo": "📄 Artículo", "fuente": "Europe PMC", "idioma": "🧬 EuroPMC", "relevancia": rel
-                })
+                doi  = item.get("doi","")
+                pmid = item.get("pmid","")
+                url  = f"https://doi.org/{doi}" if doi else (f"https://europepmc.org/article/MED/{pmid}" if pmid else "")
+                resultados.append({"titulo":titulo,"autor":autores_str[:100],"autores_lista":autores,
+                    "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                    "url":url,"citas":safe_int(item.get("citedByCount")),
+                    "tipo":"📄 Artículo","fuente":"Europe PMC","idioma":"🧬 EuroPMC","relevancia":rel})
     except: pass
     return resultados
 
 def buscar_doaj(var1, var2, año_inicio, año_fin, max_results=40):
     resultados = []
     años_busqueda = list(range(año_inicio, año_fin+1))
-    tema_es = f"{var1} {var2}" if var2 else var1
-    tema_en = traducir(tema_es, 'en')
-    
-    for query in [tema_en, tema_es]:
-        try:
-            r = requests.get(f"https://doaj.org/api/search/articles/{quote_plus(query)}",
-                           params={"pageSize": max_results}, timeout=TIMEOUT_API)
-            if r.status_code == 200:
-                for item in r.json().get("results", []):
-                    bib = item.get("bibjson", {})
-                    titulo = bib.get("title", "")
-                    abstract = bib.get("abstract", "") or ""
-                    rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
-                    if rel == 'ninguna': continue
-                    año = safe_int(bib.get("year"))
-                    if año not in años_busqueda: continue
-                    autores = [a.get("name", "") for a in bib.get("author", []) if a.get("name")]
-                    links = bib.get("link", [])
-                    url = links[0].get("url", "") if links else ""
-                    for ident in bib.get("identifier", []):
-                        if ident.get("type") == "doi":
-                            url = f"https://doi.org/{ident.get('id', '')}"; break
-                    resultados.append({
-                        "titulo": titulo, "autor": autores_display(autores), "autores_lista": autores,
-                        "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                        "url": url, "citas": 0,
-                        "tipo": "📄 Artículo", "fuente": "DOAJ", "idioma": "📖 DOAJ", "relevancia": rel
-                    })
-            time.sleep(0.2)
-        except: pass
+    query_en = f"{traducir(var1,'en')} {traducir(var2,'en')}" if var2 else traducir(var1,'en')
+    try:
+        r = requests.get(f"https://doaj.org/api/search/articles/{quote_plus(query_en)}",
+                         params={"pageSize":max_results}, timeout=TIMEOUT_API)
+        if r.status_code == 200:
+            for item in r.json().get("results",[]):
+                bib = item.get("bibjson",{})
+                titulo = bib.get("title","")
+                abstract = bib.get("abstract","") or ""
+                rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
+                if rel == 'ninguna': continue
+                año = safe_int(bib.get("year"))
+                if año not in años_busqueda: continue
+                autores = [a.get("name","") for a in bib.get("author",[]) if a.get("name")]
+                links = bib.get("link",[])
+                url = links[0].get("url","") if links else ""
+                for ident in bib.get("identifier",[]):
+                    if ident.get("type")=="doi":
+                        url = f"https://doi.org/{ident.get('id','')}"; break
+                resultados.append({"titulo":titulo,"autor":autores_display(autores),"autores_lista":autores,
+                    "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                    "url":url,"citas":0,
+                    "tipo":"📄 Artículo","fuente":"DOAJ","idioma":"📖 DOAJ","relevancia":rel})
+    except: pass
     return resultados
 
 def buscar_arxiv(var1, var2, año_inicio, año_fin, max_results=40):
     resultados = []
     años_busqueda = list(range(año_inicio, año_fin+1))
-    tema_en = traducir(f"{var1} {var2}" if var2 else var1, 'en')
+    query_en = f"{traducir(var1,'en')} {traducir(var2,'en')}" if var2 else traducir(var1,'en')
     try:
         r = requests.get("http://export.arxiv.org/api/query", params={
-            "search_query": f"all:{tema_en}", "max_results": max_results,
-            "sortBy": "relevance", "sortOrder": "descending"}, timeout=TIMEOUT_API)
+            "search_query":f"all:{query_en}","max_results":max_results,
+            "sortBy":"relevance","sortOrder":"descending"}, timeout=TIMEOUT_API)
         if r.status_code == 200:
-            ns = {'atom': 'http://www.w3.org/2005/Atom'}
+            ns = {'atom':'http://www.w3.org/2005/Atom'}
             root = ET.fromstring(r.content)
             for entry in root.findall('atom:entry', ns):
-                titulo = (entry.findtext('atom:title', '', ns) or "").replace('\n', ' ').strip()
-                abstract = (entry.findtext('atom:summary', '', ns) or "").replace('\n', ' ').strip()
+                titulo  = (entry.findtext('atom:title','',ns) or "").replace('\n',' ').strip()
+                abstract = (entry.findtext('atom:summary','',ns) or "").replace('\n',' ').strip()
                 rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
                 if rel == 'ninguna': continue
-                pub = entry.findtext('atom:published', '', ns) or ""
-                año = int(pub[:4]) if pub and len(pub) >= 4 else 0
+                pub = entry.findtext('atom:published','',ns) or ""
+                año = int(pub[:4]) if pub and len(pub)>=4 else 0
                 if año not in años_busqueda: continue
-                autores = [a.findtext('atom:name', '', ns) for a in entry.findall('atom:author', ns)]
-                url = entry.findtext('atom:id', '', ns) or ""
-                for link in entry.findall('atom:link', ns):
-                    if link.get('title') == 'pdf': url = link.get('href', url); break
-                resultados.append({
-                    "titulo": titulo, "autor": autores_display(autores), "autores_lista": autores,
-                    "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                    "url": url, "citas": 0,
-                    "tipo": "📄 Preprint", "fuente": "arXiv", "idioma": "📄 arXiv", "relevancia": rel
-                })
+                autores = [a.findtext('atom:name','',ns) for a in entry.findall('atom:author',ns)]
+                url = entry.findtext('atom:id','',ns) or ""
+                for link in entry.findall('atom:link',ns):
+                    if link.get('title')=='pdf': url=link.get('href',url); break
+                resultados.append({"titulo":titulo,"autor":autores_display(autores),"autores_lista":autores,
+                    "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                    "url":url,"citas":0,
+                    "tipo":"📄 Preprint","fuente":"arXiv","idioma":"📄 arXiv","relevancia":rel})
     except: pass
     return resultados
 
@@ -746,36 +636,33 @@ def buscar_scielo(var1, var2, año_inicio, año_fin, max_results=40):
     resultados, titulos_vistos = [], set()
     años_busqueda = list(range(año_inicio, año_fin+1))
     tema_es = f"{var1} {var2}" if var2 else var1
-    tema_pt = traducir(tema_es, 'pt')
-    
+    tema_pt = f"{traducir(var1,'pt')} {traducir(var2,'pt')}" if var2 else traducir(var1,'pt')
     for query in [tema_es, tema_pt]:
         try:
             r = requests.get("https://api.openalex.org/works", params={
-                "search": query, "per_page": max_results, "sort": "cited_by_count:desc",
-                "filter": f"primary_location.source.display_name.search:scielo,publication_year:{año_inicio}-{año_fin}",
-                "mailto": "investigador@universidad.edu"}, timeout=TIMEOUT_API)
+                "search":query,"per_page":max_results,"sort":"cited_by_count:desc",
+                "filter":f"primary_location.source.display_name.search:scielo,publication_year:{año_inicio}-{año_fin}",
+                "mailto":"investigador@universidad.edu"}, timeout=TIMEOUT_API)
             if r.status_code == 200:
-                for work in r.json().get("results", []):
-                    titulo = work.get("title", "") or ""
+                for work in r.json().get("results",[]):
+                    titulo = work.get("title","") or ""
                     if titulo in titulos_vistos: continue
                     abstract = get_abstract_openalex(work)
                     rel = clasificar_relevancia(f"{titulo} {abstract}", var1, var2)
                     if rel == 'ninguna': continue
-                    fecha = work.get("publication_date", "")
-                    año = int(fecha[:4]) if fecha and len(fecha) >= 4 else 0
+                    fecha = work.get("publication_date","")
+                    año = int(fecha[:4]) if fecha and len(fecha)>=4 else 0
                     if año not in años_busqueda: continue
                     titulos_vistos.add(titulo)
-                    autores = [a.get("author", {}).get("display_name", "") for a in work.get("authorships", []) if a.get("author", {}).get("display_name")]
+                    autores = [a.get("author",{}).get("display_name","") for a in work.get("authorships",[]) if a.get("author",{}).get("display_name")]
                     src = ""
                     try: src = work["primary_location"]["source"]["display_name"]
                     except: pass
-                    resultados.append({
-                        "titulo": titulo, "autor": autores_display(autores), "autores_lista": autores,
-                        "cita_apa": formatear_cita_apa(autores, año), "resumen": abstract[:500], "año": año,
-                        "url": work.get("doi") or work.get("id", ""), "citas": safe_int(work.get("cited_by_count")),
-                        "tipo": "📄 Artículo", "fuente": f"SciELO ({src[:25]})" if src else "SciELO",
-                        "idioma": "🌎 SciELO", "relevancia": rel
-                    })
+                    resultados.append({"titulo":titulo,"autor":autores_display(autores),"autores_lista":autores,
+                        "cita_apa":formatear_cita_apa(autores,año),"resumen":abstract[:500],"año":año,
+                        "url":work.get("doi") or work.get("id",""),"citas":safe_int(work.get("cited_by_count")),
+                        "tipo":"📄 Artículo","fuente":f"SciELO ({src[:25]})" if src else "SciELO","idioma":"🌎 SciELO",
+                        "relevancia":rel})
             time.sleep(0.2)
         except: pass
     return resultados
@@ -783,7 +670,7 @@ def buscar_scielo(var1, var2, año_inicio, año_fin, max_results=40):
 # ════════════════════════════════════════════════════════════════════════════
 # 🚀 EJECUTOR PRINCIPAL
 # ════════════════════════════════════════════════════════════════════════════
-def ejecutar_busqueda(tema, año_inicio, año_fin, fuentes_seleccionadas, buscar_tesis_oai, buscar_alicia):
+def ejecutar_busqueda(tema, año_inicio, año_fin, fuentes_seleccionadas, buscar_tesis_oai):
     var1, var2, pais = parsear_tema(tema)
     todos = []
     log_msgs = []
@@ -797,10 +684,9 @@ def ejecutar_busqueda(tema, año_inicio, año_fin, fuentes_seleccionadas, buscar
         "DOAJ":             lambda: buscar_doaj(var1, var2, año_inicio, año_fin),
         "arXiv":            lambda: buscar_arxiv(var1, var2, año_inicio, año_fin),
         "SciELO":           lambda: buscar_scielo(var1, var2, año_inicio, año_fin),
-        "Redalyc":          lambda: buscar_redalyc(var1, var2, año_inicio, año_fin),
-        "OATD":             lambda: buscar_oatd(var1, var2, año_inicio, año_fin),
     }
 
+    # Artículos
     for fuente in fuentes_seleccionadas:
         if fuente in MAPA_FUNCIONES:
             try:
@@ -810,16 +696,7 @@ def ejecutar_busqueda(tema, año_inicio, año_fin, fuentes_seleccionadas, buscar
             except Exception as e:
                 log_msgs.append(f"⚠️ {fuente}: error — {str(e)[:60]}")
 
-    # ALICIA CONCYTEC
-    if buscar_alicia:
-        try:
-            res = buscar_alicia_concytec(var1, var2, año_inicio, año_fin)
-            todos.extend(res)
-            log_msgs.append(f"✅ ALICIA CONCYTEC: {len(res)} resultados")
-        except Exception as e:
-            log_msgs.append(f"⚠️ ALICIA CONCYTEC: {str(e)[:60]}")
-
-    # Tesis OpenAlex LATAM
+    # Tesis OpenAlex LATAM (siempre)
     try:
         res = buscar_openalex_tesis_latam(var1, var2, año_inicio, año_fin)
         todos.extend(res)
@@ -838,86 +715,93 @@ def ejecutar_busqueda(tema, año_inicio, año_fin, fuentes_seleccionadas, buscar
                 pass
             time.sleep(0.2)
 
+    # Deduplicar y ordenar
     if todos:
         df = pd.DataFrame(todos)
         df['_tn'] = df['titulo'].apply(normalizar)
         df = df.drop_duplicates(subset=['_tn'], keep='first').drop(columns=['_tn'])
-        df['_ro'] = df['relevancia'].map({'ambas': 0, 'una': 1})
-        df = df.sort_values(['_ro', 'citas'], ascending=[True, False]).reset_index(drop=True)
+        df['_ro'] = df['relevancia'].map({'ambas':0,'una':1})
+        df = df.sort_values(['_ro','citas'], ascending=[True,False]).reset_index(drop=True)
         df = df.drop(columns=['_ro'])
-        df['numero'] = range(1, len(df) + 1)
+        df['numero'] = range(1, len(df)+1)
         return df, var1, var2, pais, log_msgs
     return None, var1, var2, pais, log_msgs
 
 # ════════════════════════════════════════════════════════════════════════════
-# 📊 GRÁFICA INTERACTIVA - MAPA DE INVESTIGACIÓN
+# 📊 GRÁFICA CONSENSUS - MEJORADA
 # ════════════════════════════════════════════════════════════════════════════
-def generar_grafica(df, tema, año_inicio, año_fin):
-    if df is None or df.empty:
-        return None, None
-    
-    df = df.copy()
+def generar_grafica_consensus(df, tema, año_inicio, año_fin):
     random.seed(42)
-    AÑOS_BUSQUEDA = list(range(año_inicio, año_fin + 1))
+    df = df.copy()
+    
+    # Asegurar que tenemos datos
+    if df.empty:
+        return go.Figure(), df
 
-    df['y_pos'] = [random.uniform(0.53, 0.95) if r == 'ambas' else random.uniform(0.05, 0.44)
+    # Posiciones Y con más variación
+    df['y_pos'] = [random.uniform(0.55, 0.95) if r=='ambas' else random.uniform(0.05, 0.45)
                    for r in df['relevancia']]
-    df['fecha_dt'] = [datetime(int(a), random.randint(1, 12), random.randint(1, 28)) for a in df['año']]
+    
+    # Fechas con variación en el mes
+    df['fecha_dt'] = [datetime(int(a), random.randint(1,12), random.randint(1,28)) for a in df['año']]
 
+    # Tamaño basado en citas
     max_citas = df['citas'].max() if df['citas'].max() > 0 else 1
-    df['tamano'] = 22 + (df['citas'] / max_citas) * 34
+    df['tamano'] = 18 + (df['citas'] / max_citas) * 30
 
     def color_punto(row):
-        fuente, tipo = str(row.get('fuente', '')), str(row.get('tipo', ''))
+        fuente, tipo = str(row.get('fuente','')), str(row.get('tipo',''))
         if 'Tesis' in tipo or 'Documento' in tipo:
-            if 'ALICIA' in fuente: return '#f59e0b'
-            if 'OATD' in fuente: return '#a855f7'
-            if 'OAI-PMH' in fuente: return '#f59e0b'
-            return '#8b5cf6'
+            return '#f59e0b' if 'OAI-PMH' in fuente else '#8b5cf6'
         if 'OpenAlex' in fuente:
-            if 'Inglés' in fuente: return '#3b82f6'
-            if 'Español' in fuente: return '#ef4444'
+            if 'Inglés' in fuente:    return '#3b82f6'
+            if 'Español' in fuente:   return '#ef4444'
             if 'Portugués' in fuente: return '#22c55e'
-            if 'LATAM' in fuente: return '#8b5cf6'
-        if 'CrossRef' in fuente: return '#06b6d4'
-        if 'PubMed' in fuente: return '#ec4899'
-        if 'Semantic' in fuente: return '#14b8a6'
-        if 'Europe PMC' in fuente: return '#6366f1'
-        if 'DOAJ' in fuente: return '#84cc16'
-        if 'arXiv' in fuente: return '#f97316'
-        if 'SciELO' in fuente: return '#10b981'
-        if 'Redalyc' in fuente: return '#dc2626'
-        if 'ALICIA' in fuente: return '#fbbf24'
+            if 'LATAM' in fuente:     return '#8b5cf6'
+        if 'CrossRef'      in fuente: return '#06b6d4'
+        if 'PubMed'        in fuente: return '#ec4899'
+        if 'Semantic'      in fuente: return '#14b8a6'
+        if 'Europe PMC'    in fuente: return '#6366f1'
+        if 'DOAJ'          in fuente: return '#84cc16'
+        if 'arXiv'         in fuente: return '#f97316'
+        if 'SciELO'        in fuente: return '#10b981'
         return '#94a3b8'
 
-    colores = [color_punto(row) for _, row in df.iterrows()]
-    bordes = ['#ffffff' if r == 'ambas' else '#4b5563' for r in df['relevancia']]
-    ancho_bord = [3.5 if r == 'ambas' else 2.0 for r in df['relevancia']]
+    colores    = [color_punto(row) for _, row in df.iterrows()]
+    bordes     = ['#ffffff' if r=='ambas' else '#4b5563' for r in df['relevancia']]
+    ancho_bord = [3.5 if r=='ambas' else 2.0 for r in df['relevancia']]
 
     fig = go.Figure()
 
-    for año in AÑOS_BUSQUEDA:
+    # Líneas verticales por año
+    años = list(range(año_inicio, año_fin+2))
+    for año in años:
         fig.add_shape(type="line", x0=f"{año}-01-01", x1=f"{año}-01-01",
                       y0=0, y1=1, line=dict(color="#374151", width=1, dash="dot"))
         fig.add_annotation(x=f"{año}-06-15", y=0.98, text=f"<b>{año}</b>",
                           showarrow=False, font=dict(size=14, color='#6b7280'))
 
+    # Línea divisoria horizontal
     fig.add_shape(type="line", x0=f"{año_inicio}-01-01", x1=f"{año_fin}-12-31",
                   y0=0.50, y1=0.50, line=dict(color="#22c55e", width=2, dash="dash"))
 
-    fig.add_annotation(x=f"{año_inicio-1}-09-01", y=0.74,
-                       text="<b style='color:#22c55e'>🎯 AMBAS VARIABLES</b>",
-                       showarrow=False, font=dict(size=11, color='#22c55e'), xref='x', yref='y')
-    fig.add_annotation(x=f"{año_inicio-1}-09-01", y=0.25,
-                       text="<b style='color:#f59e0b'>◎ UNA VARIABLE</b>",
-                       showarrow=False, font=dict(size=11, color='#f59e0b'), xref='x', yref='y')
+    # Etiquetas de zonas
+    fig.add_annotation(x=f"{año_inicio}-03-01", y=0.75,
+                       text="<b>🎯 AMBAS VARIABLES</b>",
+                       showarrow=False, font=dict(size=12, color='#22c55e'), xref='x', yref='y')
+    fig.add_annotation(x=f"{año_inicio}-03-01", y=0.25,
+                       text="<b>◎ UNA VARIABLE</b>",
+                       showarrow=False, font=dict(size=12, color='#f59e0b'), xref='x', yref='y')
 
-    titulos_h = [str(t)[:65] + '…' if len(str(t)) > 65 else str(t) for t in df['titulo']]
-    resumen_h = [str(r)[:130] + '…' if r and len(str(r)) > 130 else (str(r) if r else '') for r in df['resumen']]
-    etiqueta_h = ['🎯 Ambas variables' if r == 'ambas' else '◎ Una variable' for r in df['relevancia']]
+    # Preparar hover data
+    titulos_h  = [str(t)[:65]+'…' if len(str(t))>65 else str(t) for t in df['titulo']]
+    resumen_h  = [str(r)[:130]+'…' if r and len(str(r))>130 else (str(r) if r else '') for r in df['resumen']]
+    etiqueta_h = ['🎯 Ambas variables' if r=='ambas' else '◎ Una variable' for r in df['relevancia']]
 
+    # AGREGAR TODOS LOS PUNTOS
     fig.add_trace(go.Scatter(
-        x=df['fecha_dt'], y=df['y_pos'],
+        x=df['fecha_dt'].tolist(),
+        y=df['y_pos'].tolist(),
         mode='markers+text',
         marker=dict(
             size=df['tamano'].tolist(),
@@ -925,8 +809,8 @@ def generar_grafica(df, tema, año_inicio, año_fin):
             line=dict(width=ancho_bord, color=bordes),
             opacity=0.93
         ),
-        text=df['numero'],
-        textfont=dict(color='white', size=10, family='Arial Black'),
+        text=df['numero'].tolist(),
+        textfont=dict(color='white', size=9, family='Arial Black'),
         textposition='middle center',
         hovertemplate=(
             "<b style='font-size:13px'>%{customdata[7]}</b><br>"
@@ -938,14 +822,17 @@ def generar_grafica(df, tema, año_inicio, año_fin):
             "<b style='color:#22c55e'>🖱️ CLIC PARA ABRIR</b><extra></extra>"
         ),
         customdata=list(zip(
-            titulos_h, df['año'], df['citas'], df['url'],
-            df['tipo'], df['fuente'], resumen_h, df['cita_apa'], etiqueta_h
+            titulos_h, df['año'].tolist(), df['citas'].tolist(), df['url'].tolist(),
+            df['tipo'].tolist(), df['fuente'].tolist(), resumen_h, df['cita_apa'].tolist(), etiqueta_h
         ))
     ))
 
+    n_ambas_v = len(df[df['relevancia']=='ambas'])
+    n_una_v   = len(df[df['relevancia']=='una'])
+
     fig.update_layout(
         title=dict(
-            text=(f"<b>📊 Mapa de Investigación</b><br>"
+            text=(f"<b>📚 Mapa de Investigación — {len(df)} documentos</b><br>"
                   f"<span style='font-size:14px;color:#9ca3af'>{tema}</span><br>"
                   f"<span style='font-size:12px;color:#22c55e'>🖱️ Clic en círculo para abrir documento</span>"),
             font=dict(size=18, color='white'), x=0.5, y=0.96
@@ -953,25 +840,25 @@ def generar_grafica(df, tema, año_inicio, año_fin):
         xaxis=dict(title="", showgrid=True, gridcolor='#1f2937', tickformat='%b %Y',
                    tickfont=dict(color='#9ca3af', size=10),
                    range=[f"{año_inicio-1}-06-01", f"{año_fin+1}-06-01"], fixedrange=True),
-        yaxis=dict(visible=False, range=[0, 1], fixedrange=True),
-        plot_bgcolor='#111827', paper_bgcolor='#111827',
-        font=dict(color='white'), showlegend=False, height=720,
-        margin=dict(l=40, r=40, t=140, b=120), dragmode=False,
+        yaxis=dict(visible=False, range=[0,1], fixedrange=True),
+        plot_bgcolor='#111827', paper_bgcolor='#0f1923',
+        font=dict(color='white'), showlegend=False, height=680,
+        margin=dict(l=40, r=40, t=140, b=110), dragmode=False,
         annotations=[dict(
-            text=("<b>ART:</b> 🔴ES 🔵EN 🟢PT 🩵CrossRef 🩷PubMed 🧊Semantic 🟣EuroPMC 🟡DOAJ 🟠arXiv 🌿SciELO 🔴Redalyc"
-                  "   │   <b>TESIS:</b> 🟠ALICIA/OAI 🟣OpenAlex 🟪OATD   │   Tamaño=Citas"),
-            x=0.5, y=-0.08, xref='paper', yref='paper', showarrow=False, font=dict(size=10, color='#9ca3af')
+            text=(f"<b>ART:</b> 🔴ES 🔵EN 🟢PT 🩵CrossRef 🩷PubMed 🧊Semantic 🟣EuroPMC 🟡DOAJ 🟠arXiv 🌿SciELO"
+                  f"   │   <b>TESIS:</b> 🟠OAI-PMH 🟣OpenAlex   │   Tamaño = Citas   │   Borde blanco = ambas vars"),
+            x=0.5, y=-0.07, xref='paper', yref='paper', showarrow=False, font=dict(size=9, color='#6b7280')
         )]
     )
     return fig, df
 
 # ════════════════════════════════════════════════════════════════════════════
-# 📥 EXPORTAR EXCEL
+# 📥 EXPORTAR EXCEL (en memoria)
 # ════════════════════════════════════════════════════════════════════════════
 def generar_excel(df, tema, año_inicio, año_fin):
-    df_excel = df[['numero', 'tipo', 'relevancia', 'cita_apa', 'titulo', 'autor', 'año', 'citas', 'resumen', 'fuente', 'url']].copy()
-    df_excel['relevancia'] = df_excel['relevancia'].map({'ambas': '🎯 Ambas variables', 'una': '◎ Una variable'})
-    df_excel.columns = ['N°', 'Tipo', 'Relevancia', 'Cita APA', 'Título', 'Autor(es)', 'Año', 'Citas', 'Resumen/Abstract', 'Fuente', 'URL']
+    df_excel = df[['numero','tipo','relevancia','cita_apa','titulo','autor','año','citas','resumen','fuente','url']].copy()
+    df_excel['relevancia'] = df_excel['relevancia'].map({'ambas':'🎯 Ambas variables','una':'◎ Una variable'})
+    df_excel.columns = ['N°','Tipo','Relevancia','Cita APA','Título','Autor(es)','Año','Citas','Resumen/Abstract','Fuente','URL']
 
     buf = io.BytesIO()
     anchos = [5, 15, 20, 26, 62, 36, 8, 8, 82, 28, 52]
@@ -980,28 +867,33 @@ def generar_excel(df, tema, año_inicio, año_fin):
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
         df_excel.to_excel(writer, sheet_name='Resultados', index=False)
         ws = writer.sheets['Resultados']
-        header_fill = PatternFill('solid', fgColor='1E3A5F')
-        header_font = Font(color='FFFFFF', bold=True, size=11)
-        header_border = Border(bottom=Side(style='medium', color='0D47A1'),
-                               left=Side(style='thin', color='B0BEC5'),
-                               right=Side(style='thin', color='B0BEC5'),
-                               top=Side(style='thin', color='B0BEC5'))
-        row_border = Border(bottom=Side(style='thin', color='E0E0E0'),
-                            left=Side(style='thin', color='E0E0E0'),
-                            right=Side(style='thin', color='E0E0E0'),
-                            top=Side(style='thin', color='E0E0E0'))
+
+        header_fill   = PatternFill('solid', fgColor='1E3A5F')
+        header_font   = Font(color='FFFFFF', bold=True, size=11)
+        header_border = Border(
+            bottom=Side(style='medium', color='0D47A1'),
+            left=Side(style='thin', color='B0BEC5'),
+            right=Side(style='thin', color='B0BEC5'),
+            top=Side(style='thin', color='B0BEC5')
+        )
+        row_border = Border(
+            bottom=Side(style='thin', color='E0E0E0'),
+            left=Side(style='thin', color='E0E0E0'),
+            right=Side(style='thin', color='E0E0E0'),
+            top=Side(style='thin', color='E0E0E0')
+        )
         alt_fill = PatternFill('solid', fgColor='F1F8FF')
 
         for col_idx, (letra, ancho) in enumerate(zip(letras, anchos), 1):
             ws.column_dimensions[letra].width = ancho
             cell = ws.cell(row=1, column=col_idx)
-            cell.fill = header_fill
-            cell.font = header_font
+            cell.fill   = header_fill
+            cell.font   = header_font
             cell.border = header_border
             cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         ws.row_dimensions[1].height = 28
 
-        for row in range(2, len(df_excel) + 2):
+        for row in range(2, len(df_excel)+2):
             ws.row_dimensions[row].height = 58
             for col_idx in range(1, 12):
                 cell = ws.cell(row=row, column=col_idx)
@@ -1011,7 +903,7 @@ def generar_excel(df, tema, año_inicio, año_fin):
                     cell.fill = alt_fill
 
     buf.seek(0)
-    nombre_limpio = re.sub(r'[^\w\s-]', '', tema)[:25].replace(' ', '_')
+    nombre_limpio = re.sub(r'[^\w\s-]', '', tema)[:25].replace(' ','_')
     nombre_archivo = f"busqueda_{nombre_limpio}_{año_inicio}-{año_fin}.xlsx"
     return buf, nombre_archivo
 
@@ -1028,7 +920,7 @@ def pantalla_login():
             <p>Ingresa tus credenciales para continuar</p>
         </div>
         """, unsafe_allow_html=True)
-        usuario = st.text_input("👤 Usuario", placeholder="ej: admin", key="login_user")
+        usuario  = st.text_input("👤 Usuario", placeholder="ej: admin", key="login_user")
         contrasena = st.text_input("🔑 Contraseña", type="password", placeholder="••••••••", key="login_pass")
         
         if st.button("Ingresar", key="btn_login"):
@@ -1047,7 +939,7 @@ def pantalla_principal():
 
     with st.sidebar:
         st.markdown("### 📚 Buscador Académico", unsafe_allow_html=False)
-        st.markdown(f"Hola, **{st.session_state.get('usuario_actual', '')}**")
+        st.markdown(f"Hola, **{st.session_state.get('usuario_actual','')}**")
         st.divider()
 
         st.markdown("**📝 Tema de búsqueda**")
@@ -1055,18 +947,17 @@ def pantalla_principal():
 
         st.markdown("**📅 Rango de años**")
         col_a, col_b = st.columns(2)
-        año_inicio = col_a.selectbox("Desde", list(range(2015, 2027)), index=5, key="sel_año_ini")
-        año_fin = col_b.selectbox("Hasta", list(range(2015, 2027)), index=10, key="sel_año_fin")
+        año_inicio = col_a.selectbox("Desde", list(range(2015,2027)), index=5, key="sel_año_ini")
+        año_fin    = col_b.selectbox("Hasta", list(range(2015,2027)), index=10, key="sel_año_fin")
 
         st.markdown("**🔬 Fuentes de artículos**")
         fuentes_sel = st.multiselect("Selecciona", FUENTES_LISTA, default=FUENTES_LISTA, key="multi_fuentes")
 
         st.markdown("**🏛️ Opciones adicionales**")
-        buscar_oai = st.checkbox("Buscar en repositorios OAI-PMH (20 LATAM)", value=True, key="chk_oai")
-        buscar_alicia = st.checkbox("Buscar en ALICIA CONCYTEC (Perú)", value=True, key="chk_alicia")
+        buscar_oai = st.checkbox("Buscar en repositorios OAI-PMH (20 repositorios LATAM)", value=True, key="chk_oai")
 
         st.divider()
-        st.markdown("<span class='subtle'>📌 Tip: usa 'y' para separar dos variables.<br>Ej: <i>educación y tecnología en Colombia</i><br><br>🌍 La búsqueda traduce automáticamente a inglés y portugués.</span>", unsafe_allow_html=True)
+        st.markdown("<span class='subtle'>📌 Tip: usa 'y' para separar dos variables.<br>Ej: <i>educación y tecnología en Colombia</i></span>", unsafe_allow_html=True)
         st.divider()
 
         if st.button("🚪 Cerrar sesión", key="btn_logout"):
@@ -1074,9 +965,9 @@ def pantalla_principal():
             st.rerun()
 
     st.markdown("<h1>📚 Buscador Académico Multi-Fuente</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='centered subtle'>Busca tesis y artículos en 12+ fuentes científicas simultáneamente (ES/EN/PT)</p>", unsafe_allow_html=True)
+    st.markdown("<p class='centered subtle'>Busca tesis y artículos en 10+ fuentes científicas simultáneamente</p>", unsafe_allow_html=True)
 
-    col_c = st.columns([1, 2, 1])
+    col_c = st.columns([1,2,1])
     with col_c[1]:
         buscar_clicked = st.button("🔍  Buscar ahora", key="btn_buscar")
 
@@ -1091,8 +982,8 @@ def pantalla_principal():
             st.warning("⚠️ Selecciona al menos una fuente.")
             return
 
-        with st.spinner("🔄 Buscando en múltiples fuentes académicas (ES/EN/PT)... esto puede tomar un minuto."):
-            df_res, var1, var2, pais, log = ejecutar_busqueda(tema, año_inicio, año_fin, fuentes_sel, buscar_oai, buscar_alicia)
+        with st.spinner("🔄 Buscando en múltiples fuentes académicas... esto puede tomar un minuto."):
+            df_res, var1, var2, pais, log = ejecutar_busqueda(tema, año_inicio, año_fin, fuentes_sel, buscar_oai)
 
         if df_res is None or df_res.empty:
             st.error("❌ No se encontraron documentos. Intenta con otros términos o amplía el rango de años.")
@@ -1101,28 +992,28 @@ def pantalla_principal():
             return
 
         st.session_state["df_resultados"] = df_res
-        st.session_state["tema_actual"] = tema
-        st.session_state["var1"] = var1
-        st.session_state["var2"] = var2
-        st.session_state["pais"] = pais
-        st.session_state["log"] = log
-        st.session_state["año_inicio"] = año_inicio
-        st.session_state["año_fin"] = año_fin
+        st.session_state["tema_actual"]   = tema
+        st.session_state["var1"]          = var1
+        st.session_state["var2"]          = var2
+        st.session_state["pais"]          = pais
+        st.session_state["log"]           = log
+        st.session_state["año_inicio"]    = año_inicio
+        st.session_state["año_fin"]       = año_fin
 
     if "df_resultados" in st.session_state:
-        df_res = st.session_state["df_resultados"]
-        tema_act = st.session_state["tema_actual"]
-        var1 = st.session_state["var1"]
-        var2 = st.session_state["var2"]
+        df_res     = st.session_state["df_resultados"]
+        tema_act   = st.session_state["tema_actual"]
+        var1       = st.session_state["var1"]
+        var2       = st.session_state["var2"]
         año_inicio = st.session_state["año_inicio"]
-        año_fin = st.session_state["año_fin"]
+        año_fin    = st.session_state["año_fin"]
 
-        n_total = len(df_res)
-        n_ambas = len(df_res[df_res['relevancia'] == 'ambas'])
-        n_una = len(df_res[df_res['relevancia'] == 'una'])
-        n_art = len(df_res[df_res['tipo'].str.contains('Artículo|Preprint')])
-        n_tes = len(df_res[df_res['tipo'].str.contains('Tesis|Documento')])
-        n_fuentes = df_res['fuente'].nunique()
+        n_total  = len(df_res)
+        n_ambas  = len(df_res[df_res['relevancia']=='ambas'])
+        n_una    = len(df_res[df_res['relevancia']=='una'])
+        n_art    = len(df_res[df_res['tipo'].str.contains('Artículo|Preprint')])
+        n_tes    = len(df_res[df_res['tipo'].str.contains('Tesis|Documento')])
+        n_fuentes= df_res['fuente'].nunique()
 
         st.markdown(f"""
         <div class="stats-row">
@@ -1140,72 +1031,73 @@ def pantalla_principal():
             <span style="color:#7dd3fc; font-weight:600;">🔬 Variable 1:</span>
             <span style="color:#e2e8f0; margin-left:8px;">{var1}</span>
             {"<br><span style='color:#7dd3fc; font-weight:600;'>🔬 Variable 2:</span> <span style='color:#e2e8f0; margin-left:8px;'>" + str(var2) + "</span>" if var2 else ""}
-            {"<br><span style='color:#7dd3fc; font-weight:600;'>🌍 País:</span> <span style='color:#e2e8f0; margin-left:8px;'>" + str(st.session_state.get("pais", "")) + "</span>" if st.session_state.get("pais") else ""}
+            {"<br><span style='color:#7dd3fc; font-weight:600;'>🌍 País:</span> <span style='color:#e2e8f0; margin-left:8px;'>" + str(st.session_state.get("pais","")) + "</span>" if st.session_state.get("pais") else ""}
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown("---")
-        st.markdown("### 📊 Mapa de Investigación", unsafe_allow_html=False)
-        
-        fig, df_grafica = generar_grafica(df_res, tema_act, año_inicio, año_fin)
-        
-        if fig is not None:
-            fig_json = fig.to_json()
-            urls_json = json.dumps(df_grafica['url'].tolist())
-            
-            n_ambas_v = len(df_grafica[df_grafica['relevancia'] == 'ambas'])
-            n_una_v = len(df_grafica[df_grafica['relevancia'] == 'una'])
-            n_art = len(df_grafica[df_grafica['tipo'].str.contains('Artículo|Preprint')])
-            n_tes = len(df_grafica[df_grafica['tipo'].str.contains('Tesis|Documento')])
+        st.markdown("### 📊 Mapa de Investigación (Consensus)", unsafe_allow_html=False)
+        fig, df_grafica = generar_grafica_consensus(df_res, tema_act, año_inicio, año_fin)
 
-            html_chart = f'''
-            <style>#chart,#chart *{{cursor:default !important;}}</style>
-            <div id="chart" style="width:100%;height:720px;border-radius:12px;"></div>
-            <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-            <script>
-            var fig={fig_json};
-            var urls={urls_json};
-            var div=document.getElementById("chart");
-            var cfg={{displayModeBar:false,scrollZoom:false,staticPlot:false}};
-            Plotly.newPlot(div,fig.data,fig.layout,cfg);
-            div.on("plotly_click",function(d){{var u=urls[d.points[0].pointIndex];if(u)window.open(u,"_blank");}});
-            div.on("plotly_hover",function(){{div.style.cursor="pointer";}});
-            div.on("plotly_unhover",function(){{div.style.cursor="default";}});
-            </script>
-            <div style="text-align:center;margin-top:15px;padding:14px;background:#1f2937;border-radius:10px;border:1px solid #334155;">
-            <span style="color:#22c55e;font-size:15px;">✨ <b>Total: {len(df_grafica)} documentos</b></span>
-            <span style="color:#9ca3af;"> │ 📄 Art: {n_art} │ 📘 Tesis: {n_tes} │ 🎯 Ambas: {n_ambas_v} │ ◎ Una: {n_una_v}</span>
-            <span style="color:#6b7280;"> │ Fuentes: {df_grafica["fuente"].nunique()}</span>
-            </div>
-            '''
-            st.components.v1.html(html_chart, height=800, scrolling=False)
+        fig_json  = fig.to_json()
+        urls_json = json.dumps(df_grafica['url'].tolist())
+        html_chart = f"""
+        <div id="consensus_chart" style="width:100%; height:680px; border-radius:12px; background:#111827;"></div>
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+        <script>
+            var fig  = {fig_json};
+            var urls = {urls_json};
+            var div  = document.getElementById("consensus_chart");
+            Plotly.newPlot(div, fig.data, fig.layout, {{displayModeBar:false, scrollZoom:false}});
+            div.on("plotly_click", function(d) {{
+                var u = urls[d.points[0].pointIndex];
+                if (u) window.open(u, "_blank");
+            }});
+        </script>
+        """
+        st.components.v1.html(html_chart, height=720, scrolling=False)
 
         st.markdown("---")
-        col_dl = st.columns([1, 1, 1])
+        col_dl = st.columns([1,1,1])
 
         with col_dl[0]:
             buf_xlsx, nombre_xlsx = generar_excel(df_res, tema_act, año_inicio, año_fin)
-            st.download_button(label="📥 Descargar Excel", data=buf_xlsx, file_name=nombre_xlsx,
-                              mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="dl_excel")
+            st.download_button(
+                label="📥 Descargar Excel",
+                data=buf_xlsx,
+                file_name=nombre_xlsx,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="dl_excel"
+            )
 
         with col_dl[1]:
-            cols_csv = ['numero', 'tipo', 'relevancia', 'cita_apa', 'titulo', 'autor', 'año', 'citas', 'resumen', 'fuente', 'url']
+            cols_csv = ['numero','tipo','relevancia','cita_apa','titulo','autor','año','citas','resumen','fuente','url']
             csv_data = df_res[cols_csv].to_csv(index=False, encoding='utf-8')
-            nombre_csv = re.sub(r'[^\w\s-]', '', tema_act)[:25].replace(' ', '_')
-            st.download_button(label="📥 Descargar CSV", data=csv_data.encode('utf-8'),
-                              file_name=f"busqueda_{nombre_csv}_{año_inicio}-{año_fin}.csv", mime="text/csv", key="dl_csv")
+            nombre_csv = re.sub(r'[^\w\s-]', '', tema_act)[:25].replace(' ','_')
+            st.download_button(
+                label="📥 Descargar CSV",
+                data=csv_data.encode('utf-8'),
+                file_name=f"busqueda_{nombre_csv}_{año_inicio}-{año_fin}.csv",
+                mime="text/csv",
+                key="dl_csv"
+            )
 
         with col_dl[2]:
-            log_text = "\n".join(st.session_state.get("log", []))
-            st.download_button(label="📋 Descargar Log", data=log_text.encode('utf-8'),
-                              file_name="log_busqueda.txt", mime="text/plain", key="dl_log")
+            log_text = "\n".join(st.session_state.get("log",[]))
+            st.download_button(
+                label="📋 Descargar Log",
+                data=log_text.encode('utf-8'),
+                file_name="log_busqueda.txt",
+                mime="text/plain",
+                key="dl_log"
+            )
 
         st.markdown("---")
         st.markdown("### 📋 Lista de Documentos", unsafe_allow_html=False)
 
         col_f1, col_f2 = st.columns(2)
-        filtro_tipo = col_f1.selectbox("Filtrar por tipo", ["Todos", "📄 Artículos/Preprints", "📘 Tesis/Documentos"], key="sel_tipo")
-        filtro_rel = col_f2.selectbox("Filtrar por relevancia", ["Todos", "🎯 Ambas variables", "◎ Una variable"], key="sel_rel")
+        filtro_tipo = col_f1.selectbox("Filtrar por tipo", ["Todos","📄 Artículos/Preprints","📘 Tesis/Documentos"], key="sel_tipo")
+        filtro_rel  = col_f2.selectbox("Filtrar por relevancia", ["Todos","🎯 Ambas variables","◎ Una variable"], key="sel_rel")
 
         df_filtrado = df_res.copy()
         if filtro_tipo == "📄 Artículos/Preprints":
@@ -1213,15 +1105,16 @@ def pantalla_principal():
         elif filtro_tipo == "📘 Tesis/Documentos":
             df_filtrado = df_filtrado[df_filtrado['tipo'].str.contains('Tesis|Documento')]
         if filtro_rel == "🎯 Ambas variables":
-            df_filtrado = df_filtrado[df_filtrado['relevancia'] == 'ambas']
+            df_filtrado = df_filtrado[df_filtrado['relevancia']=='ambas']
         elif filtro_rel == "◎ Una variable":
-            df_filtrado = df_filtrado[df_filtrado['relevancia'] == 'una']
+            df_filtrado = df_filtrado[df_filtrado['relevancia']=='una']
 
         for _, row in df_filtrado.iterrows():
-            badge_rel = '<span class="badge-ambas">🎯 Ambas variables</span>' if row['relevancia'] == 'ambas' else '<span class="badge-una">◎ Una variable</span>'
+            badge_rel = '<span class="badge-ambas">🎯 Ambas variables</span>' if row['relevancia']=='ambas' else '<span class="badge-una">◎ Una variable</span>'
             badge_tipo = '<span class="badge-tesis">📘 Tesis</span>' if 'Tesis' in str(row['tipo']) or 'Documento' in str(row['tipo']) else '<span class="badge-articulo">📄 Artículo</span>'
             url_link = f'<a href="{row["url"]}" target="_blank" style="color:#38bdf8;">🔗 Ver documento</a>' if row.get('url') else ''
-            resumen_short = str(row.get('resumen', ''))[:160] + '…' if row.get('resumen') and len(str(row.get('resumen', ''))) > 160 else str(row.get('resumen', ''))
+
+            resumen_short = str(row.get('resumen',''))[:160] + '…' if row.get('resumen') and len(str(row.get('resumen','')))>160 else str(row.get('resumen',''))
 
             st.markdown(f"""
             <div class="result-card">
@@ -1239,7 +1132,7 @@ def pantalla_principal():
             """, unsafe_allow_html=True)
 
         with st.expander("📋 Log de búsqueda"):
-            for msg in st.session_state.get("log", []): st.text(msg)
+            for msg in st.session_state.get("log",[]): st.text(msg)
 
 # ════════════════════════════════════════════════════════════════════════════
 # 🏁 MAIN
